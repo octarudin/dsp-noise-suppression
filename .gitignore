@@ -1,0 +1,6 @@
+# Rekaman audio dan metrik yang dihasilkan program
+recordings/
+
+# Binary hasil build lokal
+dsp-noise-suppression.exe
+dsp-noise-suppression
