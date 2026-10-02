@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build !windows && !linux
 
 package main
 
@@ -8,9 +8,9 @@ import (
 )
 
 func printCaptureDevices() error {
-	return fmt.Errorf("perekaman audio saat ini diimplementasikan untuk Windows")
+	return fmt.Errorf("perekaman audio didukung pada Windows dan Linux")
 }
 
 func captureAudio(time.Duration, int) ([]float64, string, error) {
-	return nil, "", fmt.Errorf("perekaman audio saat ini diimplementasikan untuk Windows")
+	return nil, "", fmt.Errorf("perekaman audio didukung pada Windows dan Linux")
 }
