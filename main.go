@@ -12,6 +12,7 @@ const sampleRate = 48000
 
 func main() {
 	duration := flag.Duration("duration", 10*time.Second, "durasi rekaman")
+	noiseCalibration := flag.Duration("noise-calibration", 2*time.Second, "durasi profil noise pada awal rekaman")
 	deviceIndex := flag.Int("device", -1, "indeks perangkat input (-1 menggunakan default)")
 	outDir := flag.String("output", ".", "direktori output")
 	listDevices := flag.Bool("list-devices", false, "tampilkan perangkat input lalu keluar")
@@ -26,6 +27,9 @@ func main() {
 	if *duration <= 0 {
 		fatal(fmt.Errorf("duration harus lebih besar dari nol"))
 	}
+	if *noiseCalibration < 500*time.Millisecond || *noiseCalibration >= *duration {
+		fatal(fmt.Errorf("noise-calibration harus minimal 500ms dan lebih pendek dari duration"))
+	}
 	stamp := time.Now().Format("2006-01-02-15-04-05")
 	sessionDir := filepath.Join(*outDir, stamp)
 	if err := os.MkdirAll(sessionDir, 0o755); err != nil {
@@ -37,8 +41,13 @@ func main() {
 		fatal(fmt.Errorf("memulai pencatatan metrik: %w", err))
 	}
 
+	fmt.Printf("Kalibrasi noise: jangan bicara selama %s pertama.\n", noiseCalibration.String())
 	fmt.Printf("Merekam mono 48 kHz selama %s...\n", duration.String())
+	calibrationCue := time.AfterFunc(*noiseCalibration, func() {
+		fmt.Println("Kalibrasi selesai; silakan bicara.")
+	})
 	raw, deviceName, captureErr := captureAudio(*duration, *deviceIndex)
+	calibrationCue.Stop()
 	summary, metricsErr := monitor.Stop()
 	if captureErr != nil {
 		fatal(captureErr)
@@ -52,7 +61,7 @@ func main() {
 		fatal(err)
 	}
 
-	fmt.Println("Memproses tiga metode DSP klasik...")
+	fmt.Println("Memproses empat metode DSP klasik...")
 	methods := []struct {
 		name string
 		kind SuppressionMethod
@@ -69,6 +78,12 @@ func main() {
 		}
 		fmt.Printf("  %s\n", path)
 	}
+	vehicleFiltered := SuppressVehicleNoise(raw, sampleRate, int(noiseCalibration.Seconds()*sampleRate))
+	vehiclePath := filepath.Join(sessionDir, "filtered-vehicle-multiband-"+stamp+".wav")
+	if err := writeWAV(vehiclePath, vehicleFiltered, sampleRate); err != nil {
+		fatal(err)
+	}
+	fmt.Printf("  %s\n", vehiclePath)
 
 	fmt.Printf("\nPerangkat : %s\n", deviceName)
 	fmt.Printf("Folder sesi: %s\n", sessionDir)

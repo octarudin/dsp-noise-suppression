@@ -1,12 +1,13 @@
 # DSP Noise Suppression
 
-CLI Go untuk merekam mikrofon mono 48 kHz dan menghasilkan audio mentah serta tiga versi noise suppression klasik berbasis STFT/FFT, tanpa neural network:
+CLI Go untuk merekam mikrofon mono 48 kHz dan menghasilkan audio mentah serta empat versi noise suppression klasik berbasis STFT/FFT, tanpa neural network:
 
 1. OM-LSA dengan estimasi noise IMCRA
 2. Log-MMSE dengan decision-directed SNR
 3. Wiener filter dengan decision-directed SNR
+4. Multi-band spectral subtraction adaptif untuk noise kendaraan
 
-Sebelum STFT, semua metode memakai high-pass 80 Hz dan notch 50/100 Hz. Audio ditulis sebagai WAV PCM 16-bit mono. CPU dan RAM proses diambil setiap 250 ms selama perekaman dan disimpan sebagai CSV.
+Tiga metode pembanding memakai high-pass 80 Hz dan notch 50/100 Hz. Metode kendaraan memakai profil noise awal, VAD, high-pass 120 Hz, multi-band over-subtraction, spectral floor, penghalusan waktu/frekuensi, dan low-pass 8 kHz. Audio ditulis sebagai WAV PCM 16-bit mono. CPU dan RAM proses diambil setiap 250 ms selama perekaman dan disimpan sebagai CSV.
 
 ## Platform dan persyaratan
 
@@ -23,7 +24,7 @@ Pada Windows, program menggunakan Windows Multimedia API secara langsung. Pada L
 
 ```powershell
 go run . --list-devices
-go run . --device 0 --duration 10s --output recordings
+go run . --device 0 --duration 10s --noise-calibration 2s --output recordings
 ```
 
 Tanpa `--device`, program memakai input default sistem:
@@ -40,7 +41,7 @@ Pasang ALSA utilities, lalu periksa perangkat input:
 sudo apt update
 sudo apt install -y alsa-utils
 go run . --list-devices
-go run . --device 0 --duration 10s --output recordings
+go run . --device 0 --duration 10s --noise-calibration 2s --output recordings
 ```
 
 Program memilih perangkat `plughw` agar ALSA dapat menyesuaikan format perangkat ke PCM 16-bit, mono, 48 kHz. Untuk membangun binary Raspberry Pi 4 64-bit dari Windows:
@@ -60,6 +61,8 @@ chmod +x dsp-noise-suppression
 ./dsp-noise-suppression --device 0 --output recordings
 ```
 
+Selama durasi `--noise-calibration` pada awal rekaman, jangan berbicara dan biarkan sumber noise kendaraan tetap terdengar. Segmen ini dipakai untuk membangun profil spektrum noise. Nilai default adalah 2 detik, minimum 500 ms, dan harus lebih pendek daripada durasi rekaman.
+
 Contoh output untuk satu sesi:
 
 ```text
@@ -69,6 +72,7 @@ recordings/
     ├── filtered-omlsa-imcra-2026-10-02-15-04-05.wav
     ├── filtered-logmmse-2026-10-02-15-04-05.wav
     ├── filtered-wiener-2026-10-02-15-04-05.wav
+    ├── filtered-vehicle-multiband-2026-10-02-15-04-05.wav
     └── metrics-2026-10-02-15-04-05.csv
 ```
 
