@@ -1,6 +1,6 @@
 # DSP Noise Suppression
 
-CLI Go untuk merekam mikrofon mono 48 kHz dan menghasilkan audio mentah serta tiga versi noise suppression klasik berbasis STFT/FFT, tanpa neural network:
+CLI Go untuk merekam mikrofon mono 48 kHz atau memproses file WAV dan menghasilkan tiga versi noise suppression klasik berbasis STFT/FFT, tanpa neural network:
 
 1. OM-LSA dengan estimasi noise IMCRA
 2. Log-MMSE dengan decision-directed SNR
@@ -25,6 +25,14 @@ Pada Windows, program menggunakan Windows Multimedia API secara langsung. Pada L
 go run . --list-devices
 go run . --device 0 --duration 10s --output recordings
 ```
+
+Untuk memproses file WAV PCM 16-bit mono yang sudah ada:
+
+```powershell
+go run . --input 20260908T081251_f8d2b44c8707_raspi_raw.wav --output recordings
+```
+
+Sample rate dibaca dari file dan dipertahankan pada semua hasil. Mode `--input` tidak merekam mikrofon dan tidak membuat salinan file mentah.
 
 Tanpa `--device`, program memakai input default sistem:
 
