@@ -1,5 +1,6 @@
 # Rekaman audio dan metrik yang dihasilkan program
 recordings/
+20260908T081251_f8d2b44c8707_raspi_raw.wav
 
 # Binary hasil build lokal
 dsp-noise-suppression.exe
